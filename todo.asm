@@ -2,6 +2,8 @@ format ELF64 executable
 
 include "linux_x86_64.inc"
 
+MAX_CONN equ 5
+
 segment readable executable
 
 include "utils.inc"
@@ -30,6 +32,9 @@ main:
     CMP     rax, 0
     JL      .fatal_error
 
+    funcall2 write_cstr, STDOUT, listen_trace_msg
+    listen [sockfd], MAX_CONN
+
     close [sockfd]
     exit 0
 
@@ -50,5 +55,6 @@ sizeof_servaddr = $ - servaddr.sin_family
 start               db "INFO: Starting Web Server!", 10, 0
 socket_trace_msg    db "INFO: Creating a socket...", 10, 0
 bind_trace_msg      db "INFO: Binding the socket...", 10, 0
+listen_trace_msg    db "INFO: Listening to the socket...", 10, 0
 
 error_msg           db "FATAL ERROR!", 10, 0

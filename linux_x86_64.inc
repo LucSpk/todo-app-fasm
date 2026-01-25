@@ -4,6 +4,7 @@ SYS_exit        equ 60
 SYS_socket      equ 41
 SYS_setsockopt  equ 54
 SYS_bind equ 49
+SYS_listen equ 50
 
 AF_INET         equ 2
 SOCK_STREAM     equ 1
@@ -49,9 +50,21 @@ macro bind sockfd, addr, addrlen {
     syscall3 SYS_bind, sockfd, addr, addrlen
 }
 
+macro listen sockfd, backlog {
+    syscall2 SYS_listen, sockfd, backlog
+}
+
+
 macro syscall1 number, a {
     MOV     rax, number
     MOV     rdi, a
+    SYSCALL
+}
+
+macro syscall2 number, a, b {
+    MOV     rax, number
+    MOV     rdi, a
+    MOV     rsi, b
     SYSCALL
 }
 
