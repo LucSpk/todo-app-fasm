@@ -32,6 +32,15 @@ macro funcall2 func, a, b {
     CALL    func
 }
 
+macro funcall4 func, a, b, c, d {
+    MOV     rdi, a
+    MOV     rsi, b
+    MOV     rdx, c
+    MOV     r10, d
+    CALL    func
+}
+
+
 macro exit code {
     syscall1 SYS_exit, code
 }

@@ -1,3 +1,42 @@
+;; Generally useful utility functions
+
+;; Write an integer to a file
+;;   rdi - int fd
+;;   rsi - uint64_t int x
+write_uint:
+    TEST    rsi, rsi
+    JZ      .base_zero
+
+    MOV     rcx, 10     ;; 10 literal for division
+    MOV     rax, rsi    ;; keeping track of rsi in rax cause it's easier to div it like that
+    MOV     r10, 0      ;; counter of how many digits we already converted
+
+.next_digit:
+    TEST    rax, rax
+    JZ      .done
+    MOV     rdx, 0
+    DIV     rcx
+    ADD     rdx, '0'
+    DEC     rsp
+    MOV     byte [rsp], dl
+    INC     r10
+    JMP     .next_digit
+
+.done:
+    write rdi, rsp, r10
+    ADD     rsp, r10
+    RET
+
+.base_zero:
+    DEC     rsp
+    MOV     byte [rsp], '0'
+    write rdi, rsp, 1
+    INC     rsp
+    RET
+
+;; Write a NULL-terminated string to a file
+;;   rdi - int fd
+;;   rsi - const char *s
 write_cstr:
     PUSH    rsi
     PUSH    rdi
@@ -11,6 +50,8 @@ write_cstr:
     SYSCALL
     RET
 
+;; Compute the length of a NULL-terminated string
+;;   rdi - const char *s
 strlen:
     PUSH    rdi
     XOR     rax, rax
@@ -26,4 +67,43 @@ strlen:
     POP     rsi
     SUB     rdi, rsi
     MOV     rax, rdi
+    RET
+
+;; Check if text starts with the prefix (both strings are sized)
+;;   rdi - void *text
+;;   rsi - size_t text_len
+;;   rdx - void *prefix
+;;   r10 - size_t prefix_len
+starts_with:
+    XOR     rax, rax
+    XOR     rbx, rbx
+
+.next_char:
+    CMP     rsi, 0
+    JLE     .done
+
+    CMP     r10, 0
+    JLE     .done
+
+    MOV     al, byte [rdi]
+    MOV     bl, byte [rdx]
+    CMP     rax, rbx
+    JNE     .done
+
+    DEC     rsi
+    INC     rdi
+    DEC     r10
+    INC     rdx
+    JMP     .next_char
+
+.done:
+    CMP     r10, 0
+    JE      .yes
+
+.no:
+    MOV     rax, 0
+    RET
+
+.yes:
+    MOV     rax, 1
     RET
