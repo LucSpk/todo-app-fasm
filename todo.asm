@@ -60,6 +60,7 @@ main:
     CMP     rax, 0
     JG      .handle_get_method
 
+
 .handle_get_method:
     ADD     [request_cur], get_len
     SUB     [request_len], get_len
@@ -67,11 +68,25 @@ main:
     funcall4 starts_with, [request_cur], [request_len], index_route, index_route_len
     CALL    starts_with
     CMP     rax, 0
-    jg .serve_index_page
+    JG      .serve_index_page
+
+    JMP     .serve_error_404
+
 
 .serve_index_page:
     funcall2 write_cstr, [connfd], index_page_response
     funcall2 write_cstr, [connfd], index_page_header
+    CALL    render_todos_as_html
+
+    funcall2 write_cstr, [connfd], index_page_footer
+    close [connfd]
+
+    JMP     .next_request
+
+.serve_error_404:
+    funcall2 write_cstr, [connfd], error_404
+    close [connfd]
+    JMP .next_request
 
     close [connfd]
     close [sockfd]
@@ -82,7 +97,6 @@ main:
     close [connfd]
     close [sockfd]
     exit 1
-
 
 render_todos_as_html:
     PUSH    0
@@ -150,6 +164,13 @@ get_len = $ - get
 index_route db "/ "
 index_route_len = $ - index_route
 
+error_404            db "HTTP/1.1 404 Not found", 13, 10
+                     db "Content-Type: text/html; charset=utf-8", 13, 10
+                     db "Connection: close", 13, 10
+                     db 13, 10
+                     db "<h1>Page not found</h1>", 10
+                     db "<a href='/'>Back to Home</a>", 10
+                     db 0
 index_page_response  db "HTTP/1.1 200 OK", 13, 10
                      db "Content-Type: text/html; charset=utf-8", 13, 10
                      db "Connection: close", 13, 10
@@ -157,6 +178,17 @@ index_page_response  db "HTTP/1.1 200 OK", 13, 10
                      db 0
 index_page_header    db "<h1>To-Do</h1>", 10
                      db "<ul>", 10
+                     db 0
+index_page_footer    db "  <li>", 10
+                     db "    <form style='display: inline' method='post' action='/' enctype='text/plain'>", 10
+                     db "        <input style='width: 25px' type='submit' value='+'>", 10
+                     db "        <input type='text' name='todo' autofocus>", 10
+                     db "    </form>", 10
+                     db "  </li>", 10
+                     db "</ul>", 10
+                     db "<form method='post' action='/shutdown'>", 10
+                     db "    <input type='submit' value='shutdown'>", 10
+                     db "</form>", 10
                      db 0
 todo_header          db "  <li>"
                      db 0
