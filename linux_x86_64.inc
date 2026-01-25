@@ -1,10 +1,12 @@
+SYS_read        equ 0
 SYS_write       equ 1
 SYS_close       equ 3
 SYS_exit        equ 60
 SYS_socket      equ 41
 SYS_setsockopt  equ 54
-SYS_bind equ 49
-SYS_listen equ 50
+SYS_bind        equ 49
+SYS_listen      equ 50
+SYS_accept      equ 43
 
 AF_INET         equ 2
 SOCK_STREAM     equ 1
@@ -52,6 +54,14 @@ macro bind sockfd, addr, addrlen {
 
 macro listen sockfd, backlog {
     syscall2 SYS_listen, sockfd, backlog
+}
+
+macro accept sockfd, addr, addrlen {
+    syscall3 SYS_accept, sockfd, addr, addrlen
+}
+
+macro read fd, buf, count {
+    syscall3 SYS_read, fd, buf, count
 }
 
 

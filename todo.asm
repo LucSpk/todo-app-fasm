@@ -2,7 +2,8 @@ format ELF64 executable
 
 include "linux_x86_64.inc"
 
-MAX_CONN equ 5
+MAX_CONN    equ 5
+REQUEST_CAP equ 128 * 1024
 
 segment readable executable
 
@@ -34,12 +35,30 @@ main:
 
     funcall2 write_cstr, STDOUT, listen_trace_msg
     listen [sockfd], MAX_CONN
+    CMP     rax, 0
+    JL      .fatal_error
 
+.next_request:
+    
+    funcall2 write_cstr, STDOUT, accept_trace_msg
+    accept [sockfd], cliaddr.sin_family, cliaddr_len
+    CMP     rax, 0
+    JL      .fatal_error
+
+    MOV     qword [connfd], rax
+    read [connfd], request, REQUEST_CAP
+    CMP     rax, 0
+    JL      .fatal_error
+
+    MOV     [request_len], rax
+
+    close [connfd]
     close [sockfd]
     exit 0
 
 .fatal_error:
     funcall2 write_cstr, STDERR, error_msg
+    close [connfd]
     close [sockfd]
     exit 1
 
@@ -48,13 +67,21 @@ segment readable writeable
 
 enable              dd 1
 sockfd              dq -1
+connfd              dq -1
 
 servaddr servaddr_in
 sizeof_servaddr = $ - servaddr.sin_family
+
+cliaddr servaddr_in
+cliaddr_len dd sizeof_servaddr
 
 start               db "INFO: Starting Web Server!", 10, 0
 socket_trace_msg    db "INFO: Creating a socket...", 10, 0
 bind_trace_msg      db "INFO: Binding the socket...", 10, 0
 listen_trace_msg    db "INFO: Listening to the socket...", 10, 0
+accept_trace_msg    db "INFO: Waiting for client connections...", 10, 0
 
 error_msg           db "FATAL ERROR!", 10, 0
+
+request     rb REQUEST_CAP
+request_len rq 1
