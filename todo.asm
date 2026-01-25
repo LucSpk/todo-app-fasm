@@ -51,6 +51,8 @@ main:
     JL      .fatal_error
 
     MOV     [request_len], rax
+    MOV     [request_cur], request
+    write STDOUT, [request_cur], [request_len]
 
     close [connfd]
     close [sockfd]
@@ -85,3 +87,4 @@ error_msg           db "FATAL ERROR!", 10, 0
 
 request     rb REQUEST_CAP
 request_len rq 1
+request_cur rq 1

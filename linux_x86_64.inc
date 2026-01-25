@@ -64,6 +64,10 @@ macro read fd, buf, count {
     syscall3 SYS_read, fd, buf, count
 }
 
+macro write fd, buf, count {
+    syscall3 SYS_write, fd, buf, count
+}
+
 
 macro syscall1 number, a {
     MOV     rax, number
