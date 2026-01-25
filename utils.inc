@@ -1,4 +1,3 @@
-
 write_cstr:
     PUSH    rsi
     PUSH    rdi

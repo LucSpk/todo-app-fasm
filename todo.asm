@@ -11,6 +11,8 @@ main:
 
     funcall2 write_cstr, STDOUT, start
 
+    exit 0
+
 
 segment readable writeable
 start            db "INFO: Starting Web Server!", 10, 0
