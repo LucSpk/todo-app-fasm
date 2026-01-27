@@ -176,6 +176,85 @@ drop_http_header:
     XOR     rax, rax
     RET
 
+;; rdi - size_t index
+delete_todo:
+    MOV     rax, TODO_SIZE
+    MUL     rdi
+    CMP     rax, [todo_end_offset]
+    JGE     .overflow
+
+    ;; ****** ****** ******
+    ;; ^      ^             ^
+    ;; dst    src           end
+    ;;
+    ;; count = end - src
+
+    MOV     rdi, todo_begin
+    ADD     rdi, rax
+    MOV     rsi, todo_begin
+    ADD     rsi, rax
+    ADD     rsi, TODO_SIZE
+    MOV     rdx, todo_begin
+    ADD     rdx, [todo_end_offset]
+    SUB     rdx, rsi
+    CALL    memcpy
+
+    SUB     [todo_end_offset], TODO_SIZE
+
+.overflow:
+    RET
+
+
+save_todos:
+    open todo_db_file_path, O_CREAT or O_WRONLY or O_TRUNC, 420
+    CMP     rax, 0
+    JL      .fail
+    PUSH    rax
+    write qword [rsp], todo_begin, [todo_end_offset]
+    close qword [rsp]
+    POP     rax
+
+.fail:
+    RET
+
+;; TODO: sanitize the input to prevent XSS
+;; rdi - void *buf
+;; rsi - size_t count
+add_todo:
+    ;; Check for TODO capacity overflow
+    CMP      qword [todo_end_offset], TODO_SIZE * TODO_CAP
+    JGE      .capacity_overflow
+
+    ;; Truncate strings longer than 255
+    MOV      rax, 0xFF
+    CMP      rsi, rax
+    CMOVG    rsi, rax
+
+    PUSH     rdi ;; void *buf [rsp+8]
+    PUSH     rsi ;; size_t count [rsp]
+
+    ;; +*******
+    ;;  ^
+    ;;  rdi
+    MOV     rdi, todo_begin
+    ADD     rdi, [todo_end_offset]
+    MOV     rdx, [rsp]
+    MOV     byte [rdi], dl
+    INC     rdi
+    MOV     rsi, [rsp+8]
+    CALL    memcpy
+
+    ADD [todo_end_offset], TODO_SIZE
+
+    POP     rsi
+    POP     rdi
+    MOV     rax, 0
+    RET
+
+.capacity_overflow:
+    MOV      rax, 1
+    RET
+
 render_todos_as_html:
     PUSH    0
     PUSH    todo_begin
@@ -231,6 +310,8 @@ listen_trace_msg    db "INFO: Listening to the socket...", 10, 0
 accept_trace_msg    db "INFO: Waiting for client connections...", 10, 0
 
 error_msg           db "FATAL ERROR!", 10, 0
+
+todo_db_file_path db "todo.db", 0
 
 request     rb REQUEST_CAP
 request_len rq 1

@@ -1,5 +1,6 @@
 SYS_read        equ 0
 SYS_write       equ 1
+SYS_open        equ 2
 SYS_close       equ 3
 SYS_exit        equ 60
 SYS_socket      equ 41
@@ -7,6 +8,10 @@ SYS_setsockopt  equ 54
 SYS_bind        equ 49
 SYS_listen      equ 50
 SYS_accept      equ 43
+
+O_WRONLY = 1
+O_CREAT = 64
+O_TRUNC = 512
 
 AF_INET         equ 2
 SOCK_STREAM     equ 1
@@ -50,6 +55,10 @@ macro funcall4 func, a, b, c, d {
 
 macro exit code {
     syscall1 SYS_exit, code
+}
+
+macro open filename, flags, mode {
+    syscall3 SYS_open, filename, flags, mode
 }
 
 macro socket domain, type, protocol {

@@ -69,6 +69,79 @@ strlen:
     MOV     rax, rdi
     RET
 
+;; Parse unsigned integer from a sized string
+;;   rdi - void *buf
+;;   rsi - size_t n
+parse_uint:
+    XOR     rax, rax
+    XOR     rbx, rbx
+    MOV     rcx, 10
+.next_digit:
+    CMP     rsi, 0
+    JLE     .done
+
+    MOV     bl, byte [rdi]
+    CMP     rbx, '0'
+    JL      .done
+    CMP     rbx, '9'
+    JG      .done
+    SUB     rbx, '0'
+
+    MUL     rcx
+    ADD     rax, rbx
+
+    INC     rdi
+    DEC     rsi
+    JMP     .next_digit
+
+.done:
+    RET
+
+;; Copy a chunk of memory
+;;   rdi - void *dst
+;;   rsi - void *src
+;;   rdx - size_t n
+memcpy:
+.next_byte:
+    CMP     rdx, 0
+    JLE     .done
+
+    MOV     al, byte [rsi]
+    MOV     byte [rdi], al
+
+    INC     rdi
+    INC     rsi
+    DEC     rdx
+
+    JMP     .next_byte
+.done:
+    RET
+
+
+;; Find a character with a sized string
+;;   rdi - void *buf
+;;   rsi - size_t n
+;;   rdx - char c
+find_char:
+    CMP     rsi, 0
+    JLE     .not_found
+
+    MOV     al, byte [rdi]
+    CMP     dl, al
+    JE      .found
+
+    INC     rdi
+    DEC     rsi
+    JMP     find_char
+
+.not_found:
+    XOR     rax, rax
+    RET
+.found:
+    MOV     rax, rdi
+    RET
+
+
 ;; Check if text starts with the prefix (both strings are sized)
 ;;   rdi - void *text
 ;;   rsi - size_t text_len
