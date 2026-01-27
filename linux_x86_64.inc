@@ -32,6 +32,13 @@ macro funcall2 func, a, b {
     CALL    func
 }
 
+macro funcall3 func, a, b, c {
+    MOV     rdi, a
+    MOV     rsi, b
+    MOV     rdx, c
+    CALL    func
+}
+
 macro funcall4 func, a, b, c, d {
     MOV     rdi, a
     MOV     rsi, b

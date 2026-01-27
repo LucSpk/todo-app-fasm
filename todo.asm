@@ -81,12 +81,23 @@ main:
     SUB     [request_len], post_len
 
     funcall4 starts_with, [request_cur], [request_len], index_route, index_route_len
-    CMP rax, 0
-    JG .process_add_or_delete_todo_post 
+    CMP     rax, 0
+    JG      .process_add_or_delete_todo_post 
 
 .process_add_or_delete_todo_post:
     CALL    drop_http_header
+    CMP     rax, 0
+    JE      .serve_error_400
 
+    funcall4 starts_with, [request_cur], [request_len], todo_form_data_prefix, todo_form_data_prefix_len
+    CMP     rax, 0
+    JG      .add_new_todo_and_serve_index_page
+
+    funcall4 starts_with, [request_cur], [request_len], delete_form_data_prefix, delete_form_data_prefix_len
+    CMP     rax, 0
+    JG      .delete_todo_and_serve_index_page
+
+    JMP     .serve_error_400
 
 .serve_index_page:
     funcall2 write_cstr, [connfd], index_page_response
@@ -101,11 +112,29 @@ main:
 .serve_error_404:
     funcall2 write_cstr, [connfd], error_404
     close [connfd]
-    JMP .next_request
+    JMP     .next_request
 
     close [connfd]
     close [sockfd]
     exit 0
+
+.add_new_todo_and_serve_index_page:
+    ADD     [request_cur], todo_form_data_prefix_len
+    SUB     [request_len], todo_form_data_prefix_len
+
+    funcall2 add_todo, [request_cur], [request_len]
+    CALL    save_todos
+    JMP     .serve_index_page
+
+.delete_todo_and_serve_index_page:
+    ADD     [request_cur], delete_form_data_prefix_len
+    SUB     [request_len], delete_form_data_prefix_len
+
+    funcall2 parse_uint, [request_cur], [request_len]
+    MOV     rdi, rax
+    CALL    delete_todo
+    CALL    save_todos
+    JMP     .serve_index_page
 
 .fatal_error:
     funcall2 write_cstr, STDERR, error_msg
@@ -116,15 +145,30 @@ main:
 drop_http_header:
 .next_line:
     funcall4 starts_with, [request_cur], [request_len], clrs, 2
-    CMP rax, 0
-    JG .reached_end
+    CMP     rax, 0
+    JG      .reached_end
 
+    funcall3 find_char, [request_cur], [request_len], 10
+    CMP     rax, 0
+    JE      .invalid_header
+
+    MOV     rsi, rax
+    SUB     rsi, [request_cur]
+    INC     rsi
+    ADD     [request_cur], rsi
+    SUB     [request_len], rsi
+
+    JMP     .next_line
     
 
 .reached_end:
     ADD     [request_cur], 2
     SUB     [request_len], 2
     MOV     rax, 1
+    RET
+
+.invalid_header:
+    XOR     rax, rax
     RET
 
 render_todos_as_html:
@@ -232,6 +276,11 @@ delete_button_prefix db "<form style='display: inline' method='post' action='/'>
                      db 0
 delete_button_suffix db "'>x</button></form> "
                      db 0
+
+todo_form_data_prefix db "todo="
+todo_form_data_prefix_len = $ - todo_form_data_prefix
+delete_form_data_prefix db "delete="
+delete_form_data_prefix_len = $ - delete_form_data_prefix
 
 todo_begin rb TODO_SIZE * TODO_CAP
 todo_end_offset rq 1
