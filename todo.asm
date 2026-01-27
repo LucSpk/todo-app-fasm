@@ -60,6 +60,10 @@ main:
     CMP     rax, 0
     JG      .handle_get_method
 
+    funcall4 starts_with, [request_cur], [request_len], post, post_len
+    CMP     rax, 0
+    JG      .handle_post_method
+
 
 .handle_get_method:
     ADD     [request_cur], get_len
@@ -71,6 +75,17 @@ main:
     JG      .serve_index_page
 
     JMP     .serve_error_404
+
+.handle_post_method:
+    ADD     [request_cur], post_len
+    SUB     [request_len], post_len
+
+    funcall4 starts_with, [request_cur], [request_len], index_route, index_route_len
+    CMP rax, 0
+    JG .process_add_or_delete_todo_post 
+
+.process_add_or_delete_todo_post:
+    CALL    drop_http_header
 
 
 .serve_index_page:
@@ -97,6 +112,20 @@ main:
     close [connfd]
     close [sockfd]
     exit 1
+
+drop_http_header:
+.next_line:
+    funcall4 starts_with, [request_cur], [request_len], clrs, 2
+    CMP rax, 0
+    JG .reached_end
+
+    
+
+.reached_end:
+    ADD     [request_cur], 2
+    SUB     [request_len], 2
+    MOV     rax, 1
+    RET
 
 render_todos_as_html:
     PUSH    0
@@ -160,9 +189,13 @@ request_cur rq 1
 
 get db "GET "
 get_len = $ - get
+post db "POST "
+post_len = $ - post
 
 index_route db "/ "
 index_route_len = $ - index_route
+
+clrs db 13, 10
 
 error_404            db "HTTP/1.1 404 Not found", 13, 10
                      db "Content-Type: text/html; charset=utf-8", 13, 10
