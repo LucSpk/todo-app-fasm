@@ -109,6 +109,11 @@ main:
 
     JMP     .next_request
 
+.serve_error_400:
+    funcall2 write_cstr, [connfd], error_400
+    close [connfd]
+    JMP     .next_request
+
 .serve_error_404:
     funcall2 write_cstr, [connfd], error_404
     close [connfd]
@@ -241,6 +246,14 @@ index_route_len = $ - index_route
 
 clrs db 13, 10
 
+
+error_400            db "HTTP/1.1 400 Bad Request", 13, 10
+                     db "Content-Type: text/html; charset=utf-8", 13, 10
+                     db "Connection: close", 13, 10
+                     db 13, 10
+                     db "<h1>Bad Request</h1>", 10
+                     db "<a href='/'>Back to Home</a>", 10
+                     db 0
 error_404            db "HTTP/1.1 404 Not found", 13, 10
                      db "Content-Type: text/html; charset=utf-8", 13, 10
                      db "Connection: close", 13, 10
