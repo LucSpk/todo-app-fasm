@@ -64,6 +64,8 @@ main:
     CMP     rax, 0
     JG      .handle_post_method
 
+    JMP .serve_error_405
+
 
 .handle_get_method:
     ADD     [request_cur], get_len
@@ -122,6 +124,29 @@ main:
     close [connfd]
     close [sockfd]
     exit 0
+
+.serve_error_405:
+    funcall2 write_cstr, [connfd], error_405
+    close [connfd]
+    JMP .next_request
+
+.add_new_todo_and_serve_index_page:
+    ADD [request_cur], todo_form_data_prefix_len
+    SUB [request_len], todo_form_data_prefix_len
+
+    funcall2 add_todo, [request_cur], [request_len]
+    CALL save_todos
+    JMP .serve_index_page
+
+.delete_todo_and_serve_index_page:
+    ADD [request_cur], delete_form_data_prefix_len
+    SUB [request_len], delete_form_data_prefix_len
+
+    funcall2 parse_uint, [request_cur], [request_len]
+    MOV rdi, rax
+    CALL delete_todo
+    CALL save_todos
+    jmp .serve_index_page
 
 .add_new_todo_and_serve_index_page:
     ADD     [request_cur], todo_form_data_prefix_len
