@@ -1,3 +1,4 @@
+;; Linux related constants and macros
 SYS_read        equ 0
 SYS_write       equ 1
 SYS_open        equ 2

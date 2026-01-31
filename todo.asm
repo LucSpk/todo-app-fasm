@@ -368,32 +368,6 @@ sizeof_servaddr = $ - servaddr.sin_family
 cliaddr servaddr_in
 cliaddr_len dd sizeof_servaddr
 
-start               db "INFO: Starting Web Server!", 10, 0
-ok_msg              db "INFO: OK!", 10, 0
-socket_trace_msg    db "INFO: Creating a socket...", 10, 0
-bind_trace_msg      db "INFO: Binding the socket...", 10, 0
-listen_trace_msg    db "INFO: Listening to the socket...", 10, 0
-accept_trace_msg    db "INFO: Waiting for client connections...", 10, 0
-
-error_msg           db "FATAL ERROR!", 10, 0
-
-todo_db_file_path db "todo.db", 0
-
-request     rb REQUEST_CAP
-request_len rq 1
-request_cur rq 1
-
-get db "GET "
-get_len = $ - get
-post db "POST "
-post_len = $ - post
-
-index_route db "/ "
-index_route_len = $ - index_route
-
-shutdown_route db "/shutdown "
-shutdown_route_len = $ - shutdown_route
-
 clrs db 13, 10
 
 
@@ -459,6 +433,34 @@ todo_form_data_prefix_len = $ - todo_form_data_prefix
 delete_form_data_prefix db "delete="
 delete_form_data_prefix_len = $ - delete_form_data_prefix
 
+
+get db "GET "
+get_len = $ - get
+post db "POST "
+post_len = $ - post
+
+index_route db "/ "
+index_route_len = $ - index_route
+
+shutdown_route db "/shutdown "
+shutdown_route_len = $ - shutdown_route
+
+start               db "INFO: Starting Web Server!", 10, 0
+ok_msg              db "INFO: OK!", 10, 0
+socket_trace_msg    db "INFO: Creating a socket...", 10, 0
+bind_trace_msg      db "INFO: Binding the socket...", 10, 0
+listen_trace_msg    db "INFO: Listening to the socket...", 10, 0
+accept_trace_msg    db "INFO: Waiting for client connections...", 10, 0
+error_msg           db "FATAL ERROR!", 10, 0
+
+todo_db_file_path db "todo.db", 0
+
+request_len rq 1
+request_cur rq 1
+request     rb REQUEST_CAP
+
+;; [todo][todo][todo][todo][todo][todo]...
+;;             ^
 todo_begin rb TODO_SIZE * TODO_CAP
 todo_end_offset rq 1
 
