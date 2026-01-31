@@ -102,8 +102,7 @@ macro write fd, buf, count {
 
 macro fstat64 fd, statbuf {
     syscall2 SYS_fstat64, fd, statbuf
-} 
-
+}
 
 macro syscall1 number, a {
     MOV     rax, number
