@@ -8,7 +8,10 @@ SYS_setsockopt  equ 54
 SYS_bind        equ 49
 SYS_listen      equ 50
 SYS_accept      equ 43
+SYS_fstat64     equ 5
 
+
+O_RDONLY = 0
 O_WRONLY = 1
 O_CREAT = 64
 O_TRUNC = 512
@@ -22,6 +25,9 @@ SO_REUSEADDR = 2
 
 STDOUT          equ 1
 STDERR          equ 2
+
+sizeof_stat64 = 144
+stat64.st_size = 48
 
 struc servaddr_in
 {
@@ -92,6 +98,10 @@ macro read fd, buf, count {
 macro write fd, buf, count {
     syscall3 SYS_write, fd, buf, count
 }
+
+macro fstat64 fd, statbuf {
+    syscall2 SYS_fstat64, fd, statbuf
+} 
 
 
 macro syscall1 number, a {

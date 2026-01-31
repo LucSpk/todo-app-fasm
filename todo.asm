@@ -13,6 +13,7 @@ include "utils.inc"
 
 entry main
 main: 
+    CALL    load_todos
 
     funcall2 write_cstr, STDOUT, start
 
@@ -223,6 +224,51 @@ delete_todo:
 .overflow:
     RET
 
+load_todos:
+   ;; [rsp+8] - fd
+   ;; [rsp]   - st_size
+
+    SUB     rsp, 16
+    MOV     qword [rsp + 8], -1
+    MOV     qword [rsp], 0
+
+    open todo_db_file_path, O_RDONLY, 0
+    CMP     rax, 0
+    JL      .error
+    MOV     [rsp + 8], rax
+
+    fstat64 [rsp+8], statbuf
+    CMP     rax, 0
+    JL     .error
+
+    MOV     rax, statbuf
+    ADD     rax, stat64.st_size
+    MOV     rax, [rax]
+    MOV     [rsp], rax
+
+    ;; Check if the size of db is divisible by TODO_SIZE
+    MOV     rcx, TODO_SIZE
+    DIV     rcx
+    CMP     rdx, 0
+    JNE     .error
+
+    ;; Truncate the size to supported TODO_CAP
+    MOV     rcx, TODO_CAP * TODO_SIZE
+    MOV     rax, [rsp]
+    CMP     rax, rcx
+    CMOVG   rax, rcx
+    MOV     [rsp], rax
+
+    ;; Read the entire db from file system
+    read [rsp+8], todo_begin, [rsp]
+    MOV     rax, [rsp]
+    MOV     [todo_end_offset], rax
+
+
+.error:
+    close [rsp+8]
+    ADD     rsp, 16
+    RET
 
 save_todos:
     open todo_db_file_path, O_CREAT or O_WRONLY or O_TRUNC, 420
@@ -415,3 +461,5 @@ delete_form_data_prefix_len = $ - delete_form_data_prefix
 
 todo_begin rb TODO_SIZE * TODO_CAP
 todo_end_offset rq 1
+
+statbuf rb sizeof_stat64
